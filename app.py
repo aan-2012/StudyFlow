@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# -------------------- DB SETUP --------------------
 def init_db():
     conn = sqlite3.connect("tasks.db")
     c = conn.cursor()
@@ -18,24 +17,22 @@ def init_db():
     ''')
     c.execute('''
         CREATE TABLE IF NOT EXISTS notes (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              content TEXT,
-              category TEXT
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content TEXT,
+            category TEXT
         )
     ''')
     conn.commit()
     conn.close()
 
+init_db()
 
-# -------------------- HOME --------------------
 @app.route("/")
 def home():
     conn = sqlite3.connect("tasks.db")
     c = conn.cursor()
-
     c.execute("SELECT * FROM tasks")
     all_tasks = c.fetchall()
-
     conn.close()
 
     total_tasks = len(all_tasks)
@@ -60,7 +57,6 @@ def notes():
 
         if note:
             note = note[:2000]
-
             c.execute(
                 "INSERT INTO notes (content, category) VALUES (?, ?)",
                 (note, category)
@@ -68,7 +64,6 @@ def notes():
             conn.commit()
 
         return redirect("/notes")
-    
 
     category_filter = request.args.get("category", "")
 
@@ -79,14 +74,12 @@ def notes():
         )
     else:
         c.execute("SELECT * FROM notes ORDER BY id DESC")
-    all_notes = c.fetchall()
 
+    all_notes = c.fetchall()
     conn.close()
 
     return render_template("notes.html", notes=all_notes)
 
-
-# -------------------- TASKS --------------------
 @app.route("/tasks", methods=["GET", "POST"])
 def tasks():
     if request.method == "POST":
@@ -116,7 +109,6 @@ def tasks():
 
     query = "SELECT * FROM tasks"
     params = []
-
     conditions = []
 
     if category != "All":
@@ -148,8 +140,6 @@ def tasks():
         progress=progress
     )
 
-
-# -------------------- DELETE --------------------
 @app.route("/delete/<int:id>")
 def delete(id):
     conn = sqlite3.connect("tasks.db")
@@ -166,10 +156,8 @@ def delete_note(note_id):
     c.execute("DELETE FROM notes WHERE id=?", (note_id,))
     conn.commit()
     conn.close()
-    return redirect (url_for ("notes"))
+    return redirect(url_for("notes"))
 
-
-# -------------------- TOGGLE --------------------
 @app.route("/toggle/<int:id>")
 def toggle(id):
     conn = sqlite3.connect("tasks.db")
@@ -186,8 +174,6 @@ def toggle(id):
     conn.close()
     return redirect("/tasks")
 
-
-# -------------------- EDIT --------------------
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 def edit(id):
     conn = sqlite3.connect("tasks.db")
@@ -211,10 +197,6 @@ def edit(id):
 
     return render_template("edit.html", task=task)
 
-
-
-# -------------------- RUN --------------------
 if __name__ == "__main__":
-    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
